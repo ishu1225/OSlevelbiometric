@@ -1,30 +1,49 @@
 import cv2
-import os
 
-# Create directory if it doesn't exist
-if not os.path.exists("biometric_data"):
-    os.makedirs("biometric_data")
+print("Trying to open the camera...")
 
-# Start camera
-cam = cv2.VideoCapture(2)
-cv2.namedWindow("Capture Face")
+# Try MSMF backend first
+cam = cv2.VideoCapture(0, cv2.CAP_MSMF)
+
+if not cam.isOpened():
+    print("MSMF failed. Trying DSHOW...")
+    cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+
+if not cam.isOpened():
+    print("DSHOW failed. Trying default backend...")
+    cam = cv2.VideoCapture(0)
+
+if not cam.isOpened():
+    print("Camera is not accessible. Check settings.")
+    exit()
+
+print("Camera opened successfully.")
+
+# Set frame width and height
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 while True:
-    import time
-    time.sleep(2)  # Wait 2 seconds before capturing
     ret, frame = cam.read()
-
+    
     if not ret:
-        print("❌ Failed to grab frame")
+        print("Frame not captured.")
         break
-    cv2.imshow("Capture Face", frame)
 
-    # Press 's' to save the image
-    if cv2.waitKey(1) & 0xFF == ord('s'):
-       img_name = os.path.join("biometric_data", "user_face.jpg")
-       cv2.imwrite(img_name, frame)
-       print(f"✅ Image saved: {img_name}")
-       break
+    # Ensure correct format
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    cv2.imshow("Face Capture", frame)
+
+    key = cv2.waitKey(1)
+    if key == ord('s'):  # Save image
+        cv2.imwrite("face.jpg", frame)
+        print("Image saved as face.jpg")
+        break
+    elif key == ord('q'):  # Exit without saving
+        print("Exiting without saving.")
+        break
 
 cam.release()
 cv2.destroyAllWindows()
+print("Camera released successfully.")
