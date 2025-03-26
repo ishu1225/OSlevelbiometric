@@ -3,22 +3,26 @@ import face_recognition
 import os
 
 def authenticate_image(source="upload", file_path=None, use_camera=False):
-    # Check if reference image exists
-    ref_path = "reference_images/reference.jpg"
-    if not os.path.exists(ref_path):
-        print("No reference image found. Please store a reference image first.")
+    if not os.path.exists("reference_images"):
+        print("No reference images found. Please store a reference image first.")
         return False
 
-    # Load the reference image
-    print("Loading reference image...")
-    reference_image = face_recognition.load_image_file(ref_path)
-    reference_encodings = face_recognition.face_encodings(reference_image)
+    reference_encodings = {}
+    for user_id in ["user1", "user2", "user3"]:
+        ref_path = f"reference_images/reference_{user_id}.jpg"
+        if os.path.exists(ref_path):
+            print(f"Loading reference image for {user_id}...")
+            reference_image = face_recognition.load_image_file(ref_path)
+            encodings = face_recognition.face_encodings(reference_image)
+            if encodings:
+                reference_encodings[user_id] = encodings[0]
+            else:
+                print(f"No faces detected in reference image for {user_id}.")
+
     if not reference_encodings:
-        print("No faces detected in the reference image. Please store a valid image with a face.")
+        print("No valid reference images with detectable faces found.")
         return False
-    reference_encoding = reference_encodings[0]
 
-    # Load or capture the new image
     if source == "upload":
         if use_camera:
             print("Capturing image from webcam...")
@@ -57,7 +61,6 @@ def authenticate_image(source="upload", file_path=None, use_camera=False):
         print("Invalid source.")
         return False
 
-    # Detect faces in the new image
     print("Detecting faces in the new image...")
     face_locations = face_recognition.face_locations(new_image)
     if len(face_locations) == 0:
@@ -67,18 +70,16 @@ def authenticate_image(source="upload", file_path=None, use_camera=False):
         print("Multiple faces detected. Please provide an image with only one face.")
         return False
 
-    # Get face encoding for the new image
     new_encoding = face_recognition.face_encodings(new_image)[0]
 
-    # Compare the faces
-    results = face_recognition.compare_faces([reference_encoding], new_encoding)
-    if results[0]:
-        print("Authentication successful! Faces match.")
-        return True
-    else:
-        print("Authentication failed! Faces do not match.")
-        return False
+    for user_id, ref_encoding in reference_encodings.items():
+        results = face_recognition.compare_faces([ref_encoding], new_encoding)
+        if results[0]:
+            print(f"Authentication successful! Matched with {user_id}.")
+            return True
 
-# Example usage
+    print("Authentication failed! No match found with any user.")
+    return False
+
 if __name__ == "__main__":
     authenticate_image(source="upload", file_path="path_to_new_image.jpg")
