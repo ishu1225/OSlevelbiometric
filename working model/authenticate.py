@@ -75,8 +75,8 @@ def authenticate_image(source="upload", file_path=None, use_camera=False):
     for user_id, ref_encoding in reference_encodings.items():
         results = face_recognition.compare_faces([ref_encoding], new_encoding)
         if results[0]:
-            print(f"Authentication successful! Matched with {user_id}.")
-            return True
+             print(f"Authentication successful! Matched with {user_id}.")
+             return user_id  # Return the actual user ID
 
     print("Authentication failed! No match found with any user.")
     return False
